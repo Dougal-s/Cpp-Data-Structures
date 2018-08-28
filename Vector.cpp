@@ -5,8 +5,6 @@
  * @version 0.1 18/8/18
  */
 
-#include <iostream>
-
 #include <stddef.h>
 #include <memory>
 #include <initializer_list>
@@ -25,7 +23,7 @@ struct is_iterator<T, typename std::enable_if<!std::is_same<typename std::iterat
 
 
 
-template <typename T, typename Alloc = std::allocator<T>>
+template <typename T, size_t growth_factor = 2, typename Alloc = std::allocator<T>>
 class Vector {
 
 	using Alloc_traits = std::allocator_traits<Alloc>;
@@ -365,7 +363,7 @@ public:
 			if (empty()) {
 				create_storage(n);
 			} else {
-				reallocate(std::max(2*capacity(), size() + n));
+				reallocate(std::max(growth_factor*capacity(), size() + n));
 			}
 		}
 		
@@ -388,7 +386,7 @@ public:
 			if (empty()) {
 				create_storage(input_size);
 			} else {
-				reallocate(std::max(2*capacity(), size() + input_size));
+				reallocate(std::max(growth_factor*capacity(), size() + input_size));
 			}
 		}
 		
@@ -413,7 +411,7 @@ public:
 			if (empty()) {
 				create_storage(il.size());
 			} else {
-				reallocate(std::max(2*capacity(), size() + il.size()));
+				reallocate(std::max(growth_factor*capacity(), size() + il.size()));
 			}
 		}
 		
@@ -477,7 +475,7 @@ public:
 			if (empty()) {
 				create_storage(1);
 			} else {
-				reallocate(2*capacity());
+				reallocate(growth_factor*capacity());
 			}
 		}
 		
@@ -500,7 +498,7 @@ public:
 			if (empty()) {
 				create_storage(1);
 			} else {
-				reallocate(2*capacity());
+				reallocate(growth_factor*capacity());
 			}
 		}
 		
