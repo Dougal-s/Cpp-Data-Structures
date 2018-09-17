@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <utility>
+#include <type_traits>
  
 template<typename T, typename = void>
 struct is_iterator {
@@ -27,9 +28,13 @@ struct Node {
 	Node() : next(), value() {}
 
 	Node(Node* new_next) : next(new_next), value() {}
+	
+	T* val_ptr() {
+		return reinterpret_cast<T*>(&value);
+	}
 
 	Node* next;
-	T* value;
+	typename std::aligned_storage<sizeof(T), alignof(T)>::type value;
 };
 
 // Iterator class
@@ -70,10 +75,6 @@ public:
 		m_node = rhs.m_node;
 	}
 	
-	const value_type& operator*() const {
-		return *(m_node->value);
-	}
-	
 	list_iterator& operator++() {
 		m_node = m_node->next;
 		return *this;
@@ -91,6 +92,10 @@ public:
 	
 	value_type* operator->() {
 		return m_node.value;
+	}
+	
+	const value_type& operator*() const {
+		return *(m_node->value);
 	}
 	
 	bool operator==(list_iterator rhs) const {
@@ -111,7 +116,7 @@ public:
 		lhs.swap(rhs);
 	}
 	
-private:
+//private:
 	Node<value_type>* m_node;
 };
 
@@ -153,7 +158,7 @@ public:
 		m_node = rhs.m_node;
 	}
 	
-	const value_type& operator*() const {
+	reference operator*() const {
 		return *(m_node->value);
 	}
 	
@@ -162,14 +167,10 @@ public:
 		return *this;
 	}
 	
-	list_const_iterator& operator++( int ) {
-		list_iterator tmp(*this);
+	list_const_iterator operator++( int ) {
+		list_const_iterator tmp(*this);
 		m_node = m_node->next;
 		return tmp;
-	}
-	
-	value_type& operator*() {
-		return *(m_node->value);
 	}
 	
 	value_type* operator->() {
@@ -194,7 +195,7 @@ public:
 		lhs.swap(rhs);
 	}
 	
-private:
+//private:
 	const Node<value_type>* m_node;
 };
 
@@ -202,7 +203,6 @@ template <typename T, typename Allocator = std::allocator<T>>
 class Forward_list {
 
 	using Alloc_traits = std::allocator_traits<Allocator>;
-	using element_node = Node<T>;
 
 public:
 
@@ -224,17 +224,23 @@ public:
 	
 	
 	Forward_list() : m_allocator() {
-		m_head = new Node<value_type>;
+		m_head = new Node<value_type>();
 	}
 	
 	explicit Forward_list(const allocator_type& alloc) : m_head(), m_allocator(alloc) {}
 	
 	Forward_list(size_type count, const value_type& val, const allocator_type& alloc) : m_allocator(alloc) {
-		
+		m_head = new Node<value_type>();
+		for (size_type n = 0; n < count; n++) {
+			push_front(val);
+		}
 	}
 	
 	explicit Forward_list(size_type count, const allocator_type& alloc = allocator_type()) : m_allocator(alloc) {
-	
+		m_head = new Node<value_type>();
+		for (size_type n = 0; n < count; n++) {
+			emplace_front();
+		}
 	}
 	
 	template <class InputIterator, class = typename std::enable_if<is_iterator<InputIterator>::value>::type>
@@ -242,7 +248,7 @@ public:
 	
 	}
 	
-	Forward_list(const Forward_list& other) : m_allocator() {
+	Forward_list(const Forward_list& other) : m_allocator(other.m_allocator) {
 	
 	}
 	
@@ -257,7 +263,6 @@ public:
 	
 	Forward_list(Forward_list&& other, const allocator_type& alloc) : m_allocator(alloc) {
 		m_head = std::move(other.m_head);
-		m_allocator = std::move(other.m_allocator);
 	}
 	
 	Forward_list(std::initializer_list<value_type> il, const allocator_type& alloc = allocator_type()) : m_allocator(alloc) {
@@ -300,37 +305,37 @@ public:
 	// Element Access
 	
 	reference front() {
-	
+		return *(m_head->next->value);
 	}
 	
 	const_reference front() const {
-	
+		return *(m_head->next->value);
 	}
 	
 	// Iterators
 	
 	iterator before_begin() {
-	
-	}
-	
-	const_iterator before_begin() const {
-	
-	}
-	
-	const_iterator cbefore_begin() const {
-	
-	}
-	
-	iterator begin() {
 		return iterator(m_head);
 	}
 	
+	const_iterator before_begin() const {
+		return iterator(m_head);
+	}
+	
+	const_iterator cbefore_begin() const {
+		return iterator(m_head);
+	}
+	
+	iterator begin() {
+		return iterator(m_head->next);
+	}
+	
 	const_iterator begin() const {
-		return const_iterator(m_head);
+		return const_iterator(m_head->next);
 	}
 	
 	const_iterator cbegin() const {
-		return const_iterator(m_head);
+		return const_iterator(m_head->next);
 	}
 	
 	iterator end() {
@@ -338,11 +343,11 @@ public:
 	}
 	
 	const_iterator end() const {
-	
+		return nullptr;
 	}
 	
 	const_iterator cend() const {
-	
+		return nullptr;
 	}
 	
 	// Capacity
@@ -358,7 +363,9 @@ public:
 	// Modifiers
 	
 	void clear() {
-	
+		while (!empty()) {
+			pop_front();
+		}
 	}
 	
 	iterator insert_after(const_iterator pos, const value_type& val) {
@@ -396,23 +403,26 @@ public:
 	}
 	
 	void push_front(const value_type& val) {
-		*(m_head->next) = Node(m_head->next);
-		Alloc_traits::construct(m_allocator, m_head->next->value, val);
+		m_head->next = new Node(m_head->next);
+		Alloc_traits::construct(m_allocator, m_head->next->val_ptr(), val);
 	}
 	
 	void push_front(value_type&& val) {
 		m_head->next = new Node(m_head->next);
-		//Alloc_traits::construct(m_allocator, m_head->next->value, std::move(val));
+		Alloc_traits::construct(m_allocator, m_head->next->val_ptr(), std::move(val));
 	}
 	
 	template <class... Args>
 	reference emplace_front(Args&&... args) {
-		*(m_head->next) = Node(m_head->next);
-		Alloc_traits::construct(m_allocator, m_head->next->value, std::forward<Args>(args)...);
+		m_head->next = new Node(m_head->next);
+		Alloc_traits::construct(m_allocator, m_head->next->val_ptr(), std::forward<Args>(args)...);
 	}
 
 	void pop_front() {
-		
+		Node<value_type>* tmp = m_head->next;
+		m_head->next = m_head->next->next;
+		Alloc_traits::destroy(m_allocator, tmp->val_ptr());
+		delete tmp;
 	}
 	
 	void resize(size_type count) {
@@ -424,7 +434,8 @@ public:
 	}
 	
 	void swap(Forward_list& other) {
-	
+		std::swap(m_head, other.m_head);
+		std::swap(m_allocator, other.m_allocator);
 	}
 	
 	// Operations
