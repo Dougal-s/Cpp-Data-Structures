@@ -278,7 +278,8 @@ public:
 	}
 	
 	~Forward_list() {
-		
+		clear();
+		delete m_head;
 	}
 	
 	Forward_list& operator=(const Forward_list& other) {
