@@ -32,6 +32,10 @@ struct Node {
 	T* val_ptr() {
 		return reinterpret_cast<T*>(&value);
 	}
+	
+	const T* val_ptr() const {
+		return reinterpret_cast<const T*>(&value);
+	}
 
 	Node* next;
 	typename std::aligned_storage<sizeof(T), alignof(T)>::type value;
@@ -163,7 +167,7 @@ public:
 	}
 	
 	list_const_iterator& operator++() {
-		m_node = m_node->next;
+		const_cast<Node<value_type>*>(m_node) = m_node->next;
 		return *this;
 	}
 	
@@ -244,16 +248,19 @@ public:
 	}
 	
 	template <class InputIterator, class = typename std::enable_if<is_iterator<InputIterator>::value>::type>
-	Forward_list(InputIterator first, InputIterator last, const allocator_type& alloc) : m_allocator(alloc) {
-	
+	Forward_list(InputIterator first, InputIterator last, const allocator_type& alloc = allocator_type()) : m_allocator(alloc) {
+		m_head = new Node<value_type>();
+		insert_after(cbefore_begin(), first, last);
 	}
 	
 	Forward_list(const Forward_list& other) : m_allocator(other.m_allocator) {
-	
+		m_head = new Node<value_type>();
+		insert_after(cbefore_begin(), other.begin(), other.end());
 	}
 	
 	Forward_list(const Forward_list& other, const allocator_type& alloc) : m_allocator(alloc) {
-	
+		m_head = new Node<value_type>();
+		insert_after(cbefore_begin(), other.begin(), other.end());
 	}
 	
 	Forward_list(Forward_list&& other) {
@@ -266,7 +273,8 @@ public:
 	}
 	
 	Forward_list(std::initializer_list<value_type> il, const allocator_type& alloc = allocator_type()) : m_allocator(alloc) {
-	
+		m_head = new Node<value_type>();
+		insert_after(cbefore_begin(), il);
 	}
 	
 	~Forward_list() {
@@ -291,7 +299,7 @@ public:
 	
 	template <class InputIterator, class = typename std::enable_if<is_iterator<InputIterator>::value>::type>
 	void assign(InputIterator first, InputIterator last) {
-	
+		
 	}
 	
 	void assign(std::initializer_list<value_type> il) {
