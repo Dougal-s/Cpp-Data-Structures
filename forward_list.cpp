@@ -80,22 +80,22 @@ public:
 		return *this;
 	}
 	
-	list_iterator& operator++( int ) {
+	list_iterator operator++( int ) {
 		list_iterator tmp(*this);
 		m_node = m_node->next;
 		return tmp;
 	}
 	
 	value_type& operator*() {
-		return *(m_node->value);
+		return *(m_node->val_ptr());
 	}
 	
 	value_type* operator->() {
-		return m_node.value;
+		return m_node.val_ptr();
 	}
 	
 	const value_type& operator*() const {
-		return *(m_node->value);
+		return *(m_node->val_ptr());
 	}
 	
 	bool operator==(list_iterator rhs) const {
@@ -159,7 +159,7 @@ public:
 	}
 	
 	reference operator*() const {
-		return *(m_node->value);
+		return *(m_node->val_ptr());
 	}
 	
 	list_const_iterator& operator++() {
@@ -174,7 +174,7 @@ public:
 	}
 	
 	value_type* operator->() {
-		return m_node.value;
+		return m_node.val_ptr();
 	}
 	
 	bool operator==(list_const_iterator rhs) const {
@@ -339,15 +339,15 @@ public:
 	}
 	
 	iterator end() {
-		return nullptr;
+		return iterator(nullptr);
 	}
 	
 	const_iterator end() const {
-		return nullptr;
+		return const_iterator(nullptr);
 	}
 	
 	const_iterator cend() const {
-		return nullptr;
+		return const_iterator(nullptr);
 	}
 	
 	// Capacity
@@ -369,24 +369,42 @@ public:
 	}
 	
 	iterator insert_after(const_iterator pos, const value_type& val) {
-	
+		Node<value_type>* iterator_node = const_cast<Node<value_type>*>(pos.m_node);
+		iterator_node->next = new Node(iterator_node->next);
+		Alloc_traits::construct(m_allocator, iterator_node->next->val_ptr(), val);
+		return iterator(iterator_node->next);
 	}
 	
 	iterator insert_after(const_iterator pos, value_type&& val) {
-	
+		Node<value_type>* iterator_node = const_cast<Node<value_type>*>(pos.m_node);
+		iterator_node->next = new Node(iterator_node->next);
+		Alloc_traits::construct(m_allocator, iterator_node->next->val_ptr(), std::move(val));
+		return iterator(iterator_node->next);
 	}
 	
 	iterator insert_after(const_iterator pos, size_type count, const value_type& val) {
-	
+		iterator it(const_cast<Node<value_type>*>(pos.m_node));
+		for (size_type i = 0; i < count; i++, it++) {
+			insert_after(it, val);
+		}
+		return it;
 	}
 	
 	template <class InputIterator, class = typename std::enable_if<is_iterator<InputIterator>::value>::type>
 	iterator insert_after(const_iterator pos, InputIterator first, InputIterator last) {
-	
+		iterator list_it(const_cast<Node<value_type>*>(pos.m_node));
+		for (InputIterator it = first; it != last; it++, list_it++) {
+			insert_after(list_it, *it);
+		}
+		return list_it;
 	}
 	
 	iterator insert_after(const_iterator pos, std::initializer_list<value_type> il) {
-		
+		iterator list_it(const_cast<Node<value_type>*>(pos.m_node));
+		for ( typename std::initializer_list<value_type>::iterator it = il.begin(); it != il.end(); it++, list_it++) {
+			insert_after(list_it, *it);
+		}
+		return list_it;
 	}
 
 	template <class... Args>
@@ -419,10 +437,12 @@ public:
 	}
 
 	void pop_front() {
-		Node<value_type>* tmp = m_head->next;
-		m_head->next = m_head->next->next;
-		Alloc_traits::destroy(m_allocator, tmp->val_ptr());
-		delete tmp;
+		if (!empty()) {
+			Node<value_type>* tmp = m_head->next;
+			m_head->next = m_head->next->next;
+			Alloc_traits::destroy(m_allocator, tmp->val_ptr());
+			delete tmp;
+		}
 	}
 	
 	void resize(size_type count) {
