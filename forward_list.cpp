@@ -283,7 +283,8 @@ public:
 	}
 	
 	Forward_list& operator=(const Forward_list& other) {
-	
+		clear();
+		insert_after(cbefore_begin(), other.cbefore_begin(), other.cend());
 	}
 	
 	Forward_list& operator=(Forward_list&& other) {
@@ -291,7 +292,7 @@ public:
 	}
 	
 	Forward_list& operator=(std::initializer_list<value_type> il) {
-	
+		assign(il);
 	}
 	
 	void assign(size_type count, const value_type& val) {
