@@ -424,7 +424,10 @@ public:
 
 	template <class... Args>
 	iterator emplace_after(const_iterator pos, Args&&... args) {
-	
+		Node<value_type>* iterator_node = const_cast<Node<value_type>*>(pos.m_node);
+		iterator_node->next = new Node(iterator_node->next);
+		Alloc_traits::construct(m_allocator, iterator_node->next->val_ptr(), std::forward<Args>(args)...);
+		return iterator(iterator_node->next);
 	}
 	
 	iterator erase_after(const_iterator pos) {
