@@ -5,6 +5,8 @@
  * @version 0.1 18/8/18
  */
 
+#include <iostream>
+
 #include <stddef.h>
 #include <memory>
 #include <initializer_list>
@@ -167,7 +169,7 @@ public:
 	}
 	
 	list_const_iterator& operator++() {
-		const_cast<Node<value_type>*>(m_node) = m_node->next;
+		m_node = m_node->next;
 		return *this;
 	}
 	
@@ -431,11 +433,29 @@ public:
 	}
 	
 	iterator erase_after(const_iterator pos) {
-	
+		Node<value_type>* node = const_cast<Node<value_type>*>(pos.m_node);
+		if (node->next != nullptr) {
+			Node<value_type>* tmp = node->next;
+			node->next = node->next->next;
+			Alloc_traits::destroy(m_allocator, tmp->val_ptr());
+			delete tmp;
+		}
+		return iterator(node->next);
 	}
 	
 	iterator erase_after(const_iterator first, const_iterator last) {
-		
+		Node<value_type>* node = const_cast<Node<value_type>*>(first.m_node);
+		while (node->next != last.m_node) {
+			if (node->next != nullptr) {
+				Node<value_type>* tmp = node->next;
+				node->next = node->next->next;
+				Alloc_traits::destroy(m_allocator, tmp->val_ptr());
+				delete tmp;
+			} else {
+				break;
+			}
+		}
+		return iterator(node);
 	}
 	
 	void push_front(const value_type& val) {
