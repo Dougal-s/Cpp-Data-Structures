@@ -295,16 +295,21 @@ public:
 	}
 	
 	void assign(size_type count, const value_type& val) {
-	
+		clear();
+		for(size_type n = 0; n < count; n++) {
+			push_front(val);
+		}
 	}
 	
 	template <class InputIterator, class = typename std::enable_if<is_iterator<InputIterator>::value>::type>
 	void assign(InputIterator first, InputIterator last) {
-		
+		clear();
+		insert_after(cbefore_begin(), first, last);
 	}
 	
 	void assign(std::initializer_list<value_type> il) {
-	
+		clear();
+		insert_after(cbefore_begin(), il);
 	}
 	
 	allocator_type get_allocator() const {
