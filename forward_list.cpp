@@ -588,7 +588,21 @@ public:
 	}
 	
 	void reverse() {
+		
+		
 	
+		Node<value_type> *prev = nullptr,
+		                 *curr = m_head->next,
+		                 *next = curr->next;
+		
+		for (; next != nullptr; ) {
+			next = curr->next;
+			curr->next = prev;
+			prev = curr;
+			curr = next;
+		}
+		
+		m_head->next = prev;
 	}
 	
 	size_type unique() {
@@ -619,7 +633,7 @@ public:
 	}
 	
 	void sort() {
-	
+		
 	}
 	
 	template <class Compare>
