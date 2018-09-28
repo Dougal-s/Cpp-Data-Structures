@@ -592,12 +592,30 @@ public:
 	}
 	
 	size_type unique() {
-	
+		size_type removed_elems = 0;
+		for (const_iterator it = before_begin(); it.m_node->next != nullptr;) {
+			if (*(it.m_node->next->val_ptr()) == *it) {
+				erase_after(it);
+				++removed_elems;
+			} else {
+				++it;
+			}
+		}
+		return removed_elems;
 	}
 	
 	template <class BinaryPredicate>
 	size_type unique(BinaryPredicate p) {
-	
+		size_type removed_elems = 0;
+		for (const_iterator it = before_begin(); it.m_node->next != nullptr;) {
+			if ( p(*(it.m_node->next->val_ptr()), *it) ) {
+				erase_after(it);
+				++removed_elems;
+			} else {
+				++it;
+			}
+		}
+		return removed_elems;
 	}
 	
 	void sort() {
