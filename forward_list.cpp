@@ -561,12 +561,30 @@ public:
 	}
 
 	size_type remove(const value_type& val) {
-	
+		size_type removed_elems = 0;
+		for (const_iterator it = before_begin(); it.m_node->next != nullptr;) {
+			if (*(it.m_node->next->val_ptr()) == val) {
+				erase_after(it);
+				++removed_elems;
+			} else {
+				++it;
+			}
+		}
+		return removed_elems;
 	}
 	
 	template <class UnaryPredicate>
 	size_type remove_if(UnaryPredicate p) {
-	
+		size_type removed_elems = 0;
+		for (const_iterator it = before_begin(); it.m_node->next != nullptr;) {
+			if ( p(*(it.m_node->next->val_ptr())) ) {
+				erase_after(it);
+				++removed_elems;
+			} else {
+				++it;
+			}
+		}
+		return removed_elems;
 	}
 	
 	void reverse() {
