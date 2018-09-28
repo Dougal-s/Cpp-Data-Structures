@@ -484,11 +484,31 @@ public:
 	}
 	
 	void resize(size_type count) {
-	
+		const_iterator it = begin();
+		for (size_type n = 1; n < count; n++, it++) {
+			if (it.m_node->next == nullptr) {
+				insert_after(it, count-n, value_type());
+				return;
+			}
+		}
+		
+		if (it.m_node->next != nullptr) {
+			erase_after(it, end());
+		}
 	}
 	
 	void resize(size_type count, const value_type& val) {
-	
+		const_iterator it = begin();
+		for (size_type n = 1; n < count; n++, it++) {
+			if (it.m_node->next == nullptr) {
+				insert_after(it, count-n, val);
+				return;
+			}
+		}
+		
+		if (it.m_node->next != nullptr) {
+			erase_after(it, end());
+		}
 	}
 	
 	void swap(Forward_list& other) {
