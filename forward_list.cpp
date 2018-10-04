@@ -5,8 +5,6 @@
  * @version 0.1 18/8/18
  */
 
-#include <iostream>
-
 #include <stddef.h>
 #include <memory>
 #include <initializer_list>
@@ -92,6 +90,10 @@ public:
 		return tmp;
 	}
 	
+	list_iterator next() {
+		return list_iterator(m_node->next);
+	}
+	
 	value_type& operator*() {
 		return *(m_node->val_ptr());
 	}
@@ -143,7 +145,7 @@ public:
 	// Constructors
 	list_const_iterator() : m_node() {}
 	
-	explicit list_const_iterator(Node<value_type>* node) : m_node(node) {}
+	explicit list_const_iterator(const Node<value_type>* node) : m_node(node) {}
 	
 	list_const_iterator(const list_iterator<value_type>& rhs) : m_node(rhs.m_node) {}
 	
@@ -177,6 +179,10 @@ public:
 		list_const_iterator tmp(*this);
 		m_node = m_node->next;
 		return tmp;
+	}
+	
+	list_const_iterator next() {
+		return list_const_iterator(m_node->next);
 	}
 	
 	value_type* operator->() {
@@ -519,21 +525,69 @@ public:
 	// Operations
 	
 	void merge(Forward_list& other) {
-	
+		const_iterator other_it = other.begin();
+		const_iterator it = before_begin();
+		
+		for (; it.next() != end(); ++it) {
+			if ( *(it.next()) > *other_it ) {
+				insert_after(it, *other_it);
+				if (++other_it == other.end()) {
+					return;
+				}
+			}
+		}
+		
+		insert_after(it, other_it, other.cend());
 	}
 	
 	void merge(Forward_list&& other) {
-	
+		const_iterator other_it = other.begin();
+		const_iterator it = before_begin();
+		
+		for (; it.next() != end(); ++it) {
+			if ( *(it.next()) > *other_it ) {
+				insert_after(it, std::move(*other_it));
+				if (++other_it == other.end()) {
+					return;
+				}
+			}
+		}
+		
+		insert_after(it, other_it, other.cend());
 	}
 	
 	template <class Compare>
 	void merge(Forward_list& other, Compare comp) {
-	
+		const_iterator other_it = other.begin();
+		const_iterator it = before_begin();
+		
+		for (; it.next() != end(); ++it) {
+			if ( comp( *(it.next()), *other_it ) ) {
+				insert_after(it, *other_it);
+				if (++other_it == other.end()) {
+					return;
+				}
+			}
+		}
+		
+		insert_after(it, other_it, other.cend());
 	}
 	
 	template <class Compare>
 	void merge(Forward_list&& other, Compare comp) {
-	
+		const_iterator other_it = other.begin();
+		const_iterator it = before_begin();
+		
+		for (; it.next() != end(); ++it) {
+			if ( comp( *(it.next()), *other_it ) ) {
+				insert_after(it, std::move(*other_it));
+				if (++other_it == other.end()) {
+					return;
+				}
+			}
+		}
+		
+		insert_after(it, other_it, other.cend());
 	}
 	
 	void splice_after(const_iterator pos, Forward_list& other) {
@@ -588,8 +642,6 @@ public:
 	}
 	
 	void reverse() {
-		
-		
 	
 		Node<value_type> *prev = nullptr,
 		                 *curr = m_head->next,
