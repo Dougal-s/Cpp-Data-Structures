@@ -2,6 +2,7 @@
  * Linked Trie
  */
  #include <utility>
+ #include <stdexcept>
 
 namespace ds {
 
@@ -28,19 +29,19 @@ namespace ds {
 
 		T& at(const Key& key) {
 			node_type* node = find(key);
-			if (!node->val) { throw std::out_of_range("trie::at"); }
+			if (!node->val) throw std::out_of_range("ds::trie::at");
 			return *node->val;
 		}
 
 		const T& at(const Key& key) const {
 			node_type* node = find(key);
-			if (!node->val) { throw std::out_of_range("trie::at"); }
+			if (!node->val) throw std::out_of_range("ds::trie::at");
 			return *node->val;
 		}
 
 		T& operator[](const Key& key) {
 			node_type* node = find(key);
-			if (!node->val) { emplace(key); }
+			if (!node->val) emplace(key);
 			return *find(key)->val;
 		}
 
@@ -81,8 +82,7 @@ namespace ds {
 				}
 			}
 
-			if (current->val)
-				delete current->val;
+			if (current->val) delete current->val;
 			current->val = new T(std::forward<Args>(args)...);
 
 			++m_size;
@@ -91,7 +91,7 @@ namespace ds {
 		}
 
 		void erase(node_type* node) {
-			if (!node) throw std::invalid_argument("trie::erase");
+			if (!node) throw std::invalid_argument("ds::trie::erase");
 			node_type* current = node;
 			node_type* parent = current->parent;
 			delete current->val;
@@ -168,13 +168,11 @@ namespace ds {
 		size_t m_size;
 
 		node_type* destroy(node_type* root) {
-			for (node_type* child = root->child; child;) {
+			for (node_type* child = root->child; child;)
 				child = destroy(child);
-			}
 
 			node_type* next = root->next;
-			if (root->val)
-				delete root->val;
+			if (root->val) delete root->val;
 			delete root->digit;
 			delete root;
 			return next;
@@ -184,7 +182,5 @@ namespace ds {
 
 namespace std {
 	template <class Key, class T>
-	void swap(ds::trie<Key, T>& lhs, ds::trie<Key, T>& rhs) {
-		lhs.swap(rhs);
-	}
+	void swap(ds::trie<Key, T>& lhs, ds::trie<Key, T>& rhs) { lhs.swap(rhs); }
 }
