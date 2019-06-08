@@ -1,7 +1,6 @@
 /**
  * Array based binary heap
  */
-#include <cmath>
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
