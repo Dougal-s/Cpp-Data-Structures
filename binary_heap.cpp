@@ -16,9 +16,9 @@ namespace ds {
 	}
 
 	template <typename Iterator>
-	void down_heap(Iterator first, Iterator last) {
+	void down_heap(Iterator first, Iterator last, size_t element = 1) {
 		const size_t size = std::distance(first, last);
-		size_t index = 1;
+		size_t index = element;
 		while (2*index < size) {
 			const size_t max_child = first[2*index-1] < first[2*index] ? 2*index : 2*index-1;
 			if (first[max_child] < first[index-1]) {break;}
@@ -32,8 +32,10 @@ namespace ds {
 
 	template<typename Iterator>
 	void make_heap(Iterator first, Iterator last) {
-		for (Iterator back = first; back != last;)
-			ds::up_heap(first, ++back);
+		for (size_t root = (last-first)/2; root > 0; --root)
+			down_heap(first, last, root);
+
+		down_heap(first, last);
 	}
 
 	template<typename Iterator>
